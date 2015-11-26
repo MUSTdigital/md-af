@@ -30,14 +30,14 @@ class Md_Af_Admin {
 	 * @var     array    $data         Raw form data.
 	 * @var     array    $post         Post data.
 	 * @var     array    $meta         Post meta fields.
-	 * @var     string   $taxonomy     Post taxonomy.
+	 * @var     string   $term         Post term.
 	 */
 	private $plugin_name,
             $version,
             $data,
             $post,
             $meta,
-            $taxonomy;
+            $term;
 
     /**
 	 * Initialize the class and set its properties.
@@ -165,43 +165,6 @@ class Md_Af_Admin {
     }
 
     /**
-     * Save form
-	 *
-	 * @since    0.1.0
-	 */
-    public function save_form_submission() {
-
-        // Save post
-        $post_id = wp_insert_post( $this->post );
-        if ( $post_id == 0 ) {
-            $this->generate_response([
-                'success' => false,
-                'errors'  => [
-                    'code'    => 'PostNotInserted',
-                    'message' => __( 'Problem occured, try again later', 'md-af' )
-                ]
-            ]);
-        }
-
-        // Update post taxonomy
-        if ( !term_exists( $this->taxonomy, 'mdaf_id' ) ) {
-            $this->taxonomy = wp_insert_term( $this->taxonomy, 'mdaf_id');
-        }
-        wp_set_object_terms($post_id, $this->taxonomy, 'mdaf_id');
-
-        // Save post meta
-        foreach($this->meta as $key => $value){
-            update_post_meta($post_id, $key, $value);
-        }
-
-        $this->generate_response([
-            'success' => true,
-            'post_id' => $post_id
-        ]);
-
-    }
-
-    /**
      * Ajax action for frontend
      *
      * @since 0.1.0
@@ -235,7 +198,7 @@ class Md_Af_Admin {
             'post_status' => 'publish'
         ];
         $meta = [];
-        $taxonomy  = '';
+        $term  = '';
 
         foreach( $this->data as $key => $value ){
 
@@ -244,19 +207,18 @@ class Md_Af_Admin {
             switch ( $key ) {
                 case 'action':
                 case 'nonce':
-                    break; // Do nothing.
-
-                case 'post_type':
-                    $post['post_type'] = $value;
-                    break;
+                    break; // Do nothing;
 
                 case 'content':
                 case 'title':
+                case 'author':
+                case 'status':
+                case 'password':
                     $post['post_' . $key] = $value; // We don't need any sanitation since wp_insert_post will handle it itself.
                     break;
 
                 case 'form_id':
-                    $taxonomy = sanitize_title( $value );
+                    $term = sanitize_title( $value );
                     break;
 
                 case 'email':
@@ -318,11 +280,72 @@ class Md_Af_Admin {
 
         }
 
-        $this->post     = $post;
-        $this->meta     = $meta;
-        $this->taxonomy = $taxonomy;
+        // Setup default values for post
+        $defaults = array(
+            'post_status' => 'published',
+            'post_title'  => __( 'Submission', 'md-af' ),
+            'post_type'   => 'mdaf'
+        );
+
+        $this->post = wp_parse_args( $post, $defaults );
+        $this->meta = $meta;
+        $this->term = $term;
 
     }
+
+    /**
+     * Save form
+	 *
+	 * @since    0.1.0
+	 */
+    private function save_form_submission() {
+
+        // Save post
+        $post_id = wp_insert_post( $this->post );
+        if ( $post_id == 0 ) {
+            $this->generate_response([
+                'success' => false,
+                'post'    => $this->post,
+                'meta'    => $this->meta,
+                'tax'     => $this->term,
+                'errors'  => [
+                    'code'    => 'PostNotInserted',
+                    'message' => __( 'Problem occured, try again later', 'md-af' )
+                ]
+            ]);
+        }
+
+        // Update post term
+        if ( !term_exists( $this->term, 'mdaf_id' ) ) {
+            $this->term = wp_insert_term( $this->term, 'mdaf_id');
+        }
+        wp_set_object_terms($post_id, $this->term, 'mdaf_id');
+
+        // Save post meta
+        foreach($this->meta as $key => $value){
+            update_post_meta($post_id, $key, $value);
+        }
+
+        $this->send_email();
+
+        $this->generate_response([
+            'success' => true,
+            'post_id' => $post_id
+        ]);
+
+    }
+
+    /**
+     * Send email to admin and/or submitter
+     */
+    private function send_email() {
+        $admin_email = get_option('admin_email');
+        $email_subject = __( 'New submission', 'md-af' );
+        $email_message = 'New submission to the form ';
+
+        wp_mail( $admin_email, $email_subject, $email_message );
+    }
+
 
     /**
      * @since 0.1.0
