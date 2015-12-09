@@ -164,6 +164,41 @@ class Md_Af_Admin {
 
     }
 
+
+
+    /**
+     * Require plugins with TGM Plugin Activation
+     * @link   http://tgmpluginactivation.com/
+     * @since  0.1.1
+     */
+    public function require_plugins() {
+        $plugin = [[
+            'name'               => 'MD Yet Another Metafield',
+            'slug'               => 'md-yam',
+            'source'             => 'https://github.com/MUSTdigital/md-yam/releases/download/v0.7.1/md-yam.zip',
+            'required'           => false,
+            'version'            => '0.7.1',
+            'force_activation'   => false,
+            'force_deactivation' => false,
+            'external_url'       => 'https://github.com/MUSTdigital/md-yam',
+            'is_callable'        => ['set_locale', 'MD_YAM'], // If set, this callable will be be checked for availability to determine if a plugin is active.
+        ]];
+
+        $config = [
+            'id'           => 'md_af',
+            'menu'         => 'tgmpa-install-plugins',
+            'parent_slug'  => 'plugins.php',
+            'capability'   => 'activate_plugins',
+            'has_notices'  => true,
+            'dismissable'  => true,
+            'dismiss_msg'  => '',
+            'is_automatic' => false,
+            'message'      => ''
+        ];
+        tgmpa( $plugin, $config );
+    }
+
+
     /**
      * Ajax action for frontend
      *
@@ -330,6 +365,7 @@ class Md_Af_Admin {
 
         $this->generate_response([
             'success' => true,
+            'message' => 'Спасибо! Мы свяжемся с Вами в ближайшее время.',
             'post_id' => $post_id
         ]);
 

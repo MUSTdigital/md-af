@@ -28,11 +28,9 @@
                 $.post(mdaf_data.ajaxurl, data, function (response) {
 
                     if (response.success === true) {
-                        console.log(response);
-                        alert('Thanks!');
+                        form.trigger('mdaf_success', response);
                     } else {
-                        console.log(response);
-                        alert('Something went wrong. See console for details.');
+                        form.trigger('mdaf_error', response);
                     }
 
                 }, 'json').done(function () {

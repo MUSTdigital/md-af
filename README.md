@@ -18,6 +18,9 @@ This plugin is on a development stage and currently has quite a few options.
 1. Send email to the administrator.
 
 ## Changelog
+##### 0.1.1
+* TGM Plugin Activation (MD YAM will be needed for some additional features)
+* Added success and fail events.
 ##### 0.1.0
 * Initial version
 
@@ -29,7 +32,7 @@ This plugin is on a development stage and currently has quite a few options.
   - [ ] Post type
   - [ ] Allowable field names (remember - frontend can be easily compromised)
   - [ ] Text templates (for subjects, email bodies etc.)
-- [ ] Custom events
+- [x] Custom events
 - [x] Mail to admin on submit
 
 ## Licence
